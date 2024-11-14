@@ -10,7 +10,7 @@ on:
 env:
     NODE_ENV: production
     HUSKY: 0
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITHUB_TOKEN: ${{ secrets.PERSONAL_PAT }}
 
 permissions:
     contents: write # to be able to publish a GitHub release
@@ -25,7 +25,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: install dependencies
-              run: npm install --frozen-lockfile --prod=false
+              run: npm install --frozen-lockfile --include=dev
             - name: test
               run: npm run test
             - name: build

@@ -62,7 +62,6 @@
   "peerDependencies": {
     "@appsignal/javascript": "^1.3.30",
     "@appsignal/plugin-window-events": "^1.0.22",
-    "@directus/sdk": "^16.1.0",
     "axios": "^1.7.4",
     "bowser": "^2.11.0",
     "dayjs": "^1.11.11",
