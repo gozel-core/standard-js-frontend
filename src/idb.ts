@@ -45,21 +45,21 @@ export function getIdbObject<UserSchema>(
                 this.version,
                 {
                     upgrade(db, oldVersion) {
-                        onUpgrade(db, oldVersion);
+                        return onUpgrade(db, oldVersion);
                     },
                     async blocked(_currentVersion, _blockedVersion, event) {
                         // called if there are older versions of the database open on the origin, so this version cannot open.
                         await (event.target as IDBRequest).result.close();
 
                         // alert user to close the other tabs with this site open
-                        onBlocked();
+                        return onBlocked();
                     },
                     async blocking(_currentVersion, _blockingVersion, event) {
                         // called if this connection is blocking a future version of the database from opening
                         await (event.target as IDBRequest).result.close();
 
                         // alert user to reload the page, because there is newer version
-                        onBlocking();
+                        return onBlocking();
                     },
                 },
             );
