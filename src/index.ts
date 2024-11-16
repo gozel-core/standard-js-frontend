@@ -27,8 +27,4 @@ export {
     type OSPageComponentListing,
     type OSPageComponentCta,
 } from "./os";
-export {
-    initIndexedDb,
-    type MyIndexedDbApi,
-    type MyIndexedDbSchema,
-} from "./idb";
+export { getIdbObject } from "./idb";

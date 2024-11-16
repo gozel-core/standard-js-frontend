@@ -1,73 +1,82 @@
 import { BROWSER } from "esm-env";
-import { openDB, type DBSchema } from "idb";
-import { logger } from "./logger";
+import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
-export async function initIndexedDb() {
-    if (!BROWSER || !hasIndexeddb()) {
-        return;
-    }
+export function getIdbObject<UserSchema>(
+    name: string,
+    version: number,
+): Idb<UserSchema> {
+    return {
+        isSupported: "indexedDB" in window,
+        name: name,
+        version: version,
+        db: null,
 
-    const INDEXED_DB_NAME = "gozel";
-    const INDEXED_DB_VER = 2;
+        onUpgrade: () => {},
+        onBlocked: () => {},
+        onBlocking: () => {},
 
-    const db = await openDB<MyIndexedDbSchema & DBSchema>(
-        INDEXED_DB_NAME,
-        INDEXED_DB_VER,
-        {
-            upgrade(db, oldVersion) {
-                switch (oldVersion) {
-                    case 0:
-                        db.createObjectStore("user_preferences");
-                        return;
-                    case 1:
-                        db.createObjectStore("device");
-                        return;
-                }
-            },
-            async blocked(_currentVersion, _blockedVersion, event) {
-                await (event.target as IDBRequest).result.close();
-                // TODO alert user to close the other tabs with this site open
-            },
-            async blocking(_currentVersion, _blockingVersion, event) {
-                await (event.target as IDBRequest).result.close();
-                // TODO alert user to reload the page, because there is newer version
-            },
+        async init() {
+            if (!BROWSER) {
+                console.warn(
+                    `not initiating indexeddb as we are not in browser environment.`,
+                );
+                return;
+            }
+
+            if (!this.isSupported) {
+                console.warn(
+                    `indexeddb isn't supported, won't use features that rely on it.`,
+                );
+                return;
+            }
+
+            if (!this.name || !this.version) {
+                throw new Error(
+                    `Please specify name and version for the indexeddb.`,
+                );
+            }
+
+            const onBlocked = this.onBlocked;
+            const onBlocking = this.onBlocking;
+            const onUpgrade = this.onUpgrade;
+
+            this.db = await openDB<DBSchema & UserSchema>(
+                this.name,
+                this.version,
+                {
+                    upgrade(db, oldVersion) {
+                        onUpgrade(db, oldVersion);
+                    },
+                    async blocked(_currentVersion, _blockedVersion, event) {
+                        // called if there are older versions of the database open on the origin, so this version cannot open.
+                        await (event.target as IDBRequest).result.close();
+
+                        // alert user to close the other tabs with this site open
+                        onBlocked();
+                    },
+                    async blocking(_currentVersion, _blockingVersion, event) {
+                        // called if this connection is blocking a future version of the database from opening
+                        await (event.target as IDBRequest).result.close();
+
+                        // alert user to reload the page, because there is newer version
+                        onBlocking();
+                    },
+                },
+            );
         },
-    );
-
-    function hasIndexeddb() {
-        return "indexedDB" in window;
-    }
-
-    async function getOne(store: keyof MyIndexedDbSchema, key: string) {
-        logger.info(`Indexeddb get ${store}:${key}`);
-        return await db.get(store, key);
-    }
-
-    async function setOne(
-        store: keyof MyIndexedDbSchema,
-        key: string,
-        value: string,
-    ) {
-        logger.info(`Indexeddb set ${store}:${key}:${value}`);
-        return await db.put(store, value, key);
-    }
-
-    return { db, getOne, setOne };
-}
-
-export interface MyIndexedDbSchema {
-    user_preferences: {
-        key: string;
-        value: string;
-    };
-    device: {
-        key: string;
-        value: string;
     };
 }
 
-export type MyIndexedDbApi =
-    | AsyncReturnType<ReturnType<typeof initIndexedDb>>
-    | undefined;
-type AsyncReturnType<T> = T extends Promise<infer U> ? U : T;
+export interface Idb<UserSchema> {
+    isSupported: boolean;
+    name: string;
+    version: number;
+    db: IDBPDatabase<DBSchema & UserSchema> | null;
+    onBlocked: () => void;
+    onBlocking: () => void;
+    onUpgrade: (
+        db: IDBPDatabase<DBSchema & UserSchema>,
+        oldVersion: number,
+    ) => void;
+    init: () => void;
+}
