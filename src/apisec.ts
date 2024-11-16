@@ -1,12 +1,14 @@
 import axios from "axios";
 import { is, boolean, object } from "superstruct";
-import { logger } from "./logger";
+import { type Logger } from "./logger";
+import { type DeviceDetails } from "./device";
 
 /*
     Registers device to the api endpoint and adds auth scopes defined by the dev.
     Server checks if the device that makes the request has the necessary auth scopes.
  */
-class ApiSecClient {
+export class ApiSecClient {
+    logger: Logger;
     apiBaseUrl = "";
     apiVersion = "";
     apiPaths = {
@@ -14,8 +16,8 @@ class ApiSecClient {
         addAuthScope: "/sec/auth/scope",
     };
     authScopes: Record<string, string> = {};
-    deviceDetails: ApiSecDeviceDetails = {
-        deviceId: "",
+    deviceDetails: DeviceDetails = {
+        id: "",
         platformType: undefined,
         browserName: undefined,
         browserVersion: undefined,
@@ -26,25 +28,23 @@ class ApiSecClient {
     authScopesQueued: { name: string }[] = [];
     queueTimer: ReturnType<typeof setTimeout> | null = null;
 
-    async configure(
+    constructor(
+        logger: Logger,
         apiBaseUrl: string,
         apiVersion: string,
         authScopes: Record<string, string>,
-        deviceDetails: ApiSecDeviceDetails,
+        deviceDetails: DeviceDetails,
     ) {
-        logger.info("[apisec]: init client");
-
+        this.logger = logger;
         this.apiBaseUrl = apiBaseUrl;
         this.apiVersion = apiVersion;
         this.authScopes = authScopes;
         this.deviceDetails = deviceDetails;
-
-        return await this.register();
     }
 
     async register() {
         if (this.isRegistered) {
-            logger.info("[apisec]: this device already registered");
+            this.logger.info("[apisec]: this device already registered");
             return;
         }
 
@@ -52,7 +52,7 @@ class ApiSecClient {
             success: boolean(),
         });
         const data = {
-            deviceId: this.deviceDetails.deviceId,
+            id: this.deviceDetails.id,
             platformType: this.deviceDetails.platformType,
             browserName: this.deviceDetails.browserName,
             browserVersion: this.deviceDetails.browserVersion,
@@ -75,7 +75,7 @@ class ApiSecClient {
                 this.isObject(response.data) &&
                 Object.hasOwn(response.data, "error")
             ) {
-                logger.info("[apisec]: register failed", {
+                this.logger.info("[apisec]: register failed", {
                     because: `Server sent an error object`,
                     error: response.data,
                 });
@@ -83,7 +83,7 @@ class ApiSecClient {
             }
 
             if (!is(response.data, ApiSecRegisterResponseSchema)) {
-                logger.info("[apisec]: register failed", {
+                this.logger.info("[apisec]: register failed", {
                     because: `Server response and expected schema doesn't match`,
                     response: response.data,
                     schema: ApiSecRegisterResponseSchema,
@@ -93,11 +93,11 @@ class ApiSecClient {
 
             this.isRegistered = true;
 
-            logger.info("[apisec]: registered device", { data });
+            this.logger.info("[apisec]: registered device", { data });
 
             return response.data;
         } catch (e) {
-            logger.info("[apisec]: register failed", {
+            this.logger.info("[apisec]: register failed", {
                 because: `Either server doesn't work or fetch error`,
                 error: e,
             });
@@ -133,7 +133,9 @@ class ApiSecClient {
 
     async addAuthScope(name: string) {
         if (this.authScopesAdded.includes(name)) {
-            logger.info(`[apisec]: the auth scope "${name}" added already`);
+            this.logger.info(
+                `[apisec]: the auth scope "${name}" added already`,
+            );
             return;
         }
 
@@ -151,7 +153,7 @@ class ApiSecClient {
                     "Accept-Version": this.apiVersion,
                 },
                 data: {
-                    deviceId: this.deviceDetails.deviceId,
+                    deviceId: this.deviceDetails.id,
                     scope: name,
                     timestamp: new Date().toString(),
                 },
@@ -186,13 +188,4 @@ class ApiSecClient {
     isObject(v: unknown): v is object {
         return !!v && v.constructor === Object;
     }
-}
-
-export const apisec = new ApiSecClient();
-
-export interface ApiSecDeviceDetails {
-    deviceId: string;
-    platformType: string | undefined;
-    browserName: string | undefined;
-    browserVersion: string | undefined;
 }

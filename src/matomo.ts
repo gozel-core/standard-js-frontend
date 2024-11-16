@@ -1,7 +1,4 @@
-/// <reference types="vite/client" />
-
 import { metapatcher } from "metapatcher";
-import { logger } from "./logger.js";
 
 export const matomo = (function () {
     if (typeof window === "undefined") {
@@ -10,8 +7,6 @@ export const matomo = (function () {
             push: (_arg: (string | number)[]) => {},
         };
     }
-
-    logger.info("Init matomo client.");
 
     const u = "https://analytics.gozel.com.tr/";
 

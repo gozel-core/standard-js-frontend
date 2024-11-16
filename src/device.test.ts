@@ -1,6 +1,7 @@
 import { test, expect } from "vitest";
-import { device } from "./device";
+import { readDevice } from "./device";
 
 test("device id", () => {
-    expect(device.id.length).toBeGreaterThan(1);
+    const d = readDevice();
+    expect(d.id.length).toBeGreaterThan(1);
 });

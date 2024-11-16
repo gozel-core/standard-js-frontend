@@ -1,8 +1,12 @@
-export { appsignal } from "./appsignal";
-export { logger } from "./logger";
+export { getLogger, type LogLevel, type Logger } from "./logger";
 export { matomo } from "./matomo";
-export { apisec, type ApiSecDeviceDetails } from "./apisec";
-export { device, type DeviceMinimumRequirements } from "./device";
+export { ApiSecClient } from "./apisec";
+export {
+    readDevice,
+    type DeviceMinimumRequirements,
+    type DeviceObject,
+    type DeviceDetails,
+} from "./device";
 export {
     os,
     type OSBusiness,

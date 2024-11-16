@@ -2,11 +2,29 @@ import { BROWSER } from "esm-env";
 import Bowser from "bowser";
 import { nanoid } from "nanoid/non-secure";
 
-function createDevice() {
+export interface DeviceDetails {
+    id: string;
+    platformType: string | undefined;
+    browserName: string | undefined;
+    browserVersion: string | undefined;
+}
+
+export interface DeviceObject {
+    isDesktop: () => boolean;
+    isTablet: () => boolean;
+    isMobile: () => boolean;
+    isTv: () => boolean;
+    doesSatisfy: () => boolean | undefined;
+}
+
+export function readDevice(
+    prevDeviceId?: string,
+): DeviceDetails & DeviceObject {
     const browser = Bowser.getParser(
         BROWSER ? window.navigator.userAgent : "gozelbot/0",
     );
-    const deviceId = BROWSER ? getDeviceId() : createNewDeviceId();
+    const deviceId =
+        BROWSER && prevDeviceId ? prevDeviceId : createNewDeviceId();
     const platformType = getPlatformType();
     const browserName = getBrowserName();
     const browserVersion = getBrowserVersion();
@@ -31,13 +49,6 @@ function createDevice() {
         isTv,
         doesSatisfy,
     };
-
-    function getDeviceId() {
-        const did = window.localStorage.getItem("device_id");
-        return typeof did === "string" && did.length > 0
-            ? did
-            : createNewDeviceId();
-    }
 
     function createNewDeviceId() {
         return nanoid(24);
@@ -69,19 +80,19 @@ function createDevice() {
     }
 
     function isDesktop() {
-        return platformType && platformType === "desktop";
+        return platformType === "desktop";
     }
 
     function isTablet() {
-        return platformType && platformType === "tablet";
+        return platformType === "tablet";
     }
 
     function isMobile() {
-        return platformType && platformType === "mobile";
+        return platformType === "mobile";
     }
 
     function isTv() {
-        return platformType && platformType === "tv";
+        return platformType === "tv";
     }
 
     function doesSatisfy(
@@ -90,8 +101,6 @@ function createDevice() {
         return browser.satisfies(minimumRequirements);
     }
 }
-
-export const device = createDevice();
 
 export interface DeviceMinimumRequirements {
     chrome?: string;
