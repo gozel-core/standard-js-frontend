@@ -1,53 +1,46 @@
+import { BROWSER } from "esm-env";
 import { metapatcher } from "metapatcher";
 
-export const matomo = (function () {
-    if (typeof window === "undefined") {
-        return {
-            configure: (_siteId: string) => {},
-            push: (_arg: (string | number)[]) => {},
-        };
-    }
-
-    const u = "https://analytics.gozel.com.tr/";
+export function getMatomoClient(
+    siteId: string,
+    baseUrl: string = "https://analytics.gozel.com.tr/",
+    features: string[] = ["enableHeartBeatTimer", "enableLinkTracking"],
+) {
+    if (!BROWSER) return;
 
     window._paq = window._paq || [];
+    window._paq.push(["setTrackerUrl", baseUrl + "matomo.php"]);
+    window._paq.push(["setSiteId", siteId]);
 
-    window._paq.push(["enableHeartBeatTimer"]);
-    window._paq.push(["enableLinkTracking"]);
-    window._paq.push(["setTrackerUrl", u + "matomo.php"]);
+    if (features.includes("enableHeartBeatTimer"))
+        window._paq.push(["enableHeartBeatTimer"]);
+    if (features.includes("enableLinkTracking"))
+        window._paq.push(["enableLinkTracking"]);
 
-    // this is an async function but we dont care
-    // as it will handle earlier pushes to _paq
+    // loading async is ok because it will collect the previous entries once its ready
     void metapatcher.setScript(
         {
             id: "matomo",
             type: "text/javascript",
-            src: u + "matomo.js",
+            src: baseUrl + "matomo.js",
             async: true,
         },
         { location: "headEnd" },
     );
 
     return {
-        configure: function (siteId: string) {
-            window._paq.push(["setSiteId", siteId]);
-        },
-        push: function (arg: (string | number)[]) {
+        push: function (
+            arg: (string | number | (() => void) | Record<string, unknown>)[],
+        ) {
             window._paq.push(arg);
         },
     };
-})();
+}
 
 declare global {
-    interface ImportMetaEnv {
-        readonly VITE_MATOMO_SITE_ID: string;
-    }
-
-    interface ImportMeta {
-        readonly env: ImportMetaEnv;
-    }
-
     interface Window {
-        _paq: Array<Array<string | number | (() => unknown)>>;
+        _paq: Array<
+            Array<string | number | (() => void) | Record<string, unknown>>
+        >;
     }
 }

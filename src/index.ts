@@ -1,5 +1,5 @@
 export { getLogger, type LogLevel, type Logger } from "./logger";
-export { matomo } from "./matomo";
+export { getMatomoClient } from "./matomo";
 export { ApiSecClient } from "./apisec";
 export {
     readDevice,
