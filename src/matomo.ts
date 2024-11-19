@@ -8,6 +8,8 @@ export function getMatomoClient(
 ) {
     if (!BROWSER) return;
 
+    if (!baseUrl.endsWith("/")) baseUrl = baseUrl + "/";
+
     window._paq = window._paq || [];
     window._paq.push(["setTrackerUrl", baseUrl + "matomo.php"]);
     window._paq.push(["setSiteId", siteId]);
