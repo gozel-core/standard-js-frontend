@@ -31,4 +31,4 @@ export {
     type OSPageComponentListing,
     type OSPageComponentCta,
 } from "./os";
-export { getIdbObject } from "./idb";
+export { getIdbObject, type Idb } from "./idb";
