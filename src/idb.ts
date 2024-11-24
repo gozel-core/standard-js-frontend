@@ -6,7 +6,7 @@ export function getIdbObject<UserSchema>(
     version: number,
 ): Idb<UserSchema> {
     return {
-        isSupported: "indexedDB" in window,
+        isSupported: BROWSER && "indexedDB" in window,
         name: name,
         version: version,
         db: null,
