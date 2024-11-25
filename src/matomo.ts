@@ -39,6 +39,8 @@ export function getMatomoClient(
     };
 }
 
+export type MatomoClient = ReturnType<typeof getMatomoClient>;
+
 declare global {
     interface Window {
         _paq: Array<
