@@ -25,7 +25,7 @@ export const apisec = (function initApiSecClient() {
     };
     let isRegistered = false;
     const authScopesAdded: string[] = [];
-    const authScopesQueued: { name: string }[] = [];
+    const authScopesQueued: { name: string; opts?: { version: string } }[] = [];
     let queueTimer: ReturnType<typeof setTimeout> | null = null;
 
     const api = {
@@ -35,7 +35,9 @@ export const apisec = (function initApiSecClient() {
             return this;
         },
 
-        async register() {
+        async register(_opts?: { version: string }) {
+            const version =
+                _opts && _opts.version ? _opts.version : opts.version;
             if (isRegistered) {
                 if (logger)
                     logger.info("[apisec]: this device already registered");
@@ -61,9 +63,8 @@ export const apisec = (function initApiSecClient() {
                     method: "post",
                     baseURL: opts.baseUrl,
                     url:
-                        (opts.version.startsWith("/")
-                            ? opts.version
-                            : "/" + opts.version) + paths.register,
+                        (version.startsWith("/") ? version : "/" + version) +
+                        paths.register,
                     headers: headers,
                     data,
                     validateStatus: _isSuccessfulHttpStatus,
@@ -111,7 +112,7 @@ export const apisec = (function initApiSecClient() {
             queueTimer = setTimeout(() => {
                 if (authScopesQueued.length === 0) return;
                 const authScope = authScopesQueued.shift()!;
-                void this.addAuthScope(authScope.name);
+                void this.addAuthScope(authScope.name, authScope.opts);
                 this.resetTimer();
                 this.setTimer();
             }, 1000);
@@ -121,17 +122,21 @@ export const apisec = (function initApiSecClient() {
             queueTimer = null;
         },
 
-        addAuthScopeLazy(name: string) {
+        addAuthScopeLazy(name: string, _opts?: { version: string }) {
             const isDuplicate = authScopesQueued.some(
                 (item) => item.name === name,
             );
             if (isDuplicate) return;
 
-            authScopesQueued.push({ name });
+            const obj: (typeof authScopesQueued)[0] = { name };
+            if (_opts) obj.opts = _opts;
+            authScopesQueued.push(obj);
             this.resetTimer();
             this.setTimer();
         },
-        async addAuthScope(name: string) {
+        async addAuthScope(name: string, _opts?: { version: string }) {
+            const version =
+                _opts && _opts.version ? _opts.version : opts.version;
             if (authScopesAdded.includes(name)) {
                 if (logger)
                     logger.info(
@@ -153,9 +158,8 @@ export const apisec = (function initApiSecClient() {
                     method: "post",
                     baseURL: opts.baseUrl,
                     url:
-                        (opts.version.startsWith("/")
-                            ? opts.version
-                            : "/" + opts.version) + paths.addAuthScope,
+                        (version.startsWith("/") ? version : "/" + version) +
+                        paths.addAuthScope,
                     headers: headers,
                     data: {
                         deviceId: opts.deviceDetails.id,
