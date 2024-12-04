@@ -78,5 +78,5 @@ export interface Idb<UserSchema> {
         db: IDBPDatabase<DBSchema & UserSchema>,
         oldVersion: number,
     ) => void;
-    init: () => void;
+    init: () => Promise<void>;
 }
