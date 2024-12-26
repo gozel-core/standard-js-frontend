@@ -1,5 +1,5 @@
 import { BROWSER } from "esm-env";
-import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { openDB, deleteDB, type DBSchema, type IDBPDatabase } from "idb";
 
 export function getIdbObject<UserSchema>(
     name: string,
@@ -14,6 +14,8 @@ export function getIdbObject<UserSchema>(
         onUpgrade: () => {},
         onBlocked: () => {},
         onBlocking: () => {},
+
+        deleteDB,
 
         async init() {
             if (!BROWSER) {
@@ -71,6 +73,7 @@ export interface Idb<UserSchema> {
     isSupported: boolean;
     name: string;
     version: number;
+    deleteDB: (name: string) => Promise<void>;
     db: IDBPDatabase<DBSchema & UserSchema> | null;
     onBlocked: () => void;
     onBlocking: () => void;
